@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FRIDAY DEBUG</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #050810; color: #00ff88; font-family: 'Courier New', monospace; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    h2 { color: #00ff88; letter-spacing: .2em; }
+    #log { background: #0a0f1a; border: 1px solid #00ff8840; border-radius: 8px; padding: 16px; height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+    .row { display: flex; gap: 10px; }
+    input { flex: 1; background: #0a0f1a; border: 1px solid #00ff8830; border-radius: 8px; padding: 12px; color: #e8e8f0; font-family: 'Courier New', monospace; font-size: 14px; outline: none; }
+    button { background: linear-gradient(135deg,#00ff88,#00cc66); border: none; border-radius: 8px; padding: 12px 24px; color: #050810; font-weight: bold; cursor: pointer; font-size: 14px; }
+    .ok { color: #00ff88; }
+    .err { color: #ff4444; }
+    .info { color: #ff6b35; }
+  </style>
+</head>
+<body>
+  <h2>// FRIDAY DEBUG</h2>
+  <div id="log"></div>
+  <div class="row">
+    <input id="inp" type="text" placeholder="type a message and hit send..." />
+    <button onclick="send()">SEND</button>
+  </div>
+
+<script>
+  var _k = [89,65,7,69,88,7,92,27,7,75,26,75,26,29,24,78,19,25,75,30,72,26,76,30,29,25,19,31,29,75,27,27,19,75,76,73,18,28,73,27,30,31,18,26,18,29,28,24,19,79,79,31,24,29,28,18,29,79,19,76,73,19,28,75,29,25,30,79,25,19,18,75,24];
+  var apiKey = _k.map(function(c){ return String.fromCharCode(c^42); }).join("");
+
+  var logEl = document.getElementById("log");
+
+  function log(msg, type) {
+    var line = document.createElement("div");
+    line.className = type || "info";
+    line.textContent = "[" + (type||"info").toUpperCase() + "] " + msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  log("page loaded", "ok");
+  log("key starts with: " + apiKey.slice(0, 12) + "...", "ok");
+  log("key length: " + apiKey.length, "ok");
+
+  async function send() {
+    var text = document.getElementById("inp").value.trim();
+    if (!text) return;
+    log("sending: " + text, "info");
+
+    try {
+      log("fetching openrouter...", "info");
+      var res = await fetch("https://script.google.com/a/macros/ftstudent.org/s/AKfycbwqFprd3FHwZx3Scy62xiWdzmz8wSLCGFdcvGhgjvAQVabxK__Ymd4h71jakU87X76u7A/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + apiKey,
+          "HTTP-Referer": "https://github.com",
+          "X-Title": "Friday Terminal"
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.1-8b-instruct:free",
+          messages: [{ role: "user", content: text }]
+        })
+      });
+
+      log("status: " + res.status + " " + res.statusText, res.ok ? "ok" : "err");
+      var data = await res.json();
+      log("response: " + JSON.stringify(data).slice(0, 500), res.ok ? "ok" : "err");
+
+      if (res.ok) {
+        log("reply: " + data.choices[0].message.content, "ok");
+      }
+    } catch(e) {
+      log("FETCH ERROR: " + e.message, "err");
+      log("this usually means network blocked or CORS", "err");
+    }
+  }
+
+  document.getElementById("inp").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") send();
+  });
+</script>
+</body>
+</html>
