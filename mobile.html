@@ -1018,7 +1018,7 @@ let selectedColor = COLORS[0];
 // Default characters
 // Reload defaults if version mismatch
 const storedVersion = localStorage.getItem('cai_version');
-if (chars.length === 0 || storedVersion !== CHAR_VERSION) {
+if (!Array.isArray(chars) || chars.length === 0 || storedVersion !== CHAR_VERSION) {
   localStorage.setItem('cai_version', CHAR_VERSION);
   chars = [
     // 🔥 TRENDING
